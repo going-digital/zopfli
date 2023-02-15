@@ -34,7 +34,7 @@ void ZopfliInitCache(size_t blocksize, ZopfliLongestMatchCache* lmc) {
   if(lmc->sublen == NULL) {
     fprintf(stderr,
         "Error: Out of memory. Tried allocating %lu bytes of memory.\n",
-        (unsigned long)ZOPFLI_CACHE_LENGTH * 3 * blocksize);
+        (unsigned long)(ZOPFLI_CACHE_LENGTH * 3 * blocksize));
     exit (EXIT_FAILURE);
   }
 
@@ -67,17 +67,17 @@ void ZopfliSublenToCache(const unsigned short* sublen,
   if (length < 3) return;
   for (i = 3; i <= length; i++) {
     if (i == length || sublen[i] != sublen[i + 1]) {
-      cache[j * 3] = i - 3;
+      cache[j * 3] = (unsigned char)(i - 3);
       cache[j * 3 + 1] = sublen[i] % 256;
       cache[j * 3 + 2] = (sublen[i] >> 8) % 256;
-      bestlength = i;
+      bestlength = (unsigned int)i;
       j++;
       if (j >= ZOPFLI_CACHE_LENGTH) break;
     }
   }
   if (j < ZOPFLI_CACHE_LENGTH) {
     assert(bestlength == length);
-    cache[(ZOPFLI_CACHE_LENGTH - 1) * 3] = bestlength - 3;
+    cache[(ZOPFLI_CACHE_LENGTH - 1) * 3] = (unsigned char)(bestlength - 3);
   } else {
     assert(bestlength <= length);
   }
@@ -97,13 +97,13 @@ void ZopfliCacheToSublen(const ZopfliLongestMatchCache* lmc,
   if (length < 3) return;
   cache = &lmc->sublen[ZOPFLI_CACHE_LENGTH * pos * 3];
   for (j = 0; j < ZOPFLI_CACHE_LENGTH; j++) {
-    unsigned length = cache[j * 3] + 3;
+    unsigned lengthj = cache[j * 3] + 3;
     unsigned dist = cache[j * 3 + 1] + 256 * cache[j * 3 + 2];
-    for (i = prevlength; i <= length; i++) {
-      sublen[i] = dist;
+    for (i = prevlength; i <= lengthj; i++) {
+      sublen[i] = (unsigned short)dist;
     }
-    if (length == maxlength) break;
-    prevlength = length + 1;
+    if (lengthj == maxlength) break;
+    prevlength = lengthj + 1;
   }
 }
 

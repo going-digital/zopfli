@@ -59,7 +59,7 @@ void ZopfliZlibCompress(const ZopfliOptions* options,
   unsigned fcheck = 31 - cmfflg % 31;
   cmfflg += fcheck;
 
-  ZOPFLI_APPEND_DATA(cmfflg / 256, out, outsize);
+  ZOPFLI_APPEND_DATA((unsigned char)(cmfflg / 256), out, outsize);
   ZOPFLI_APPEND_DATA(cmfflg % 256, out, outsize);
 
   ZopfliDeflate(options, 2 /* dynamic block */, 1 /* final */,

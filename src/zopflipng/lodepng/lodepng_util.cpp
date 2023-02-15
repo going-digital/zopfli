@@ -110,12 +110,12 @@ unsigned insertChunks(std::vector<unsigned char>& png,
     if(name.size() != 4) return 1;
 
     if(name == "PLTE") {
-      if(l0 == 0) l0 = chunk - begin + 8;
+      if(l0 == 0) l0 = (long)(chunk - begin + 8);
     } else if(name == "IDAT") {
-      if(l0 == 0) l0 = chunk - begin + 8;
-      if(l1 == 0) l1 = chunk - begin + 8;
+      if(l0 == 0) l0 = (long)(chunk - begin + 8);
+      if(l1 == 0) l1 = (long)(chunk - begin + 8);
     } else if(name == "IEND") {
-      if(l2 == 0) l2 = chunk - begin + 8;
+      if(l2 == 0) l2 = (long)(chunk - begin + 8);
     }
 
     chunk = lodepng_chunk_next_const(chunk, end);
@@ -543,7 +543,7 @@ static int decodeICCInt32(const unsigned char* data, size_t size, size_t* pos) {
 }
 
 static float decodeICC15Fixed16(const unsigned char* data, size_t size, size_t* pos) {
-  return decodeICCInt32(data, size, pos) / 65536.0;
+  return (float)(decodeICCInt32(data, size, pos) / 65536.0);
 }
 
 static unsigned isICCword(const unsigned char* data, size_t size, size_t pos, const char* word) {
@@ -721,9 +721,9 @@ static unsigned parseICC(LodePNGICC* icc, const unsigned char* data, size_t size
 static void mulMatrix(float* x2, float* y2, float* z2, const float* m, double x, double y, double z) {
   /* double used as inputs even though in general the images are float, so the sums happen in
   double precision, because float can give numerical problems for nearby values */
-  *x2 = x * m[0] + y * m[1] + z * m[2];
-  *y2 = x * m[3] + y * m[4] + z * m[5];
-  *z2 = x * m[6] + y * m[7] + z * m[8];
+  *x2 = (float)(x * m[0] + y * m[1] + z * m[2]);
+  *y2 = (float)(x * m[3] + y * m[4] + z * m[5]);
+  *z2 = (float)(x * m[6] + y * m[7] + z * m[8]);
 }
 
 static void mulMatrixMatrix(float* result, const float* a, const float* b) {
@@ -747,15 +747,15 @@ static unsigned invMatrix(float* m) {
   double d = 1.0 / (m[0] * e0 + m[1] * e3 + m[2] * e6);
   float result[9];
   if((d > 0 ? d : -d) > 1e15) return 1; /* error, likely not invertible */
-  result[0] = e0 * d;
-  result[1] = ((double)m[2] * m[7] - (double)m[1] * m[8]) * d;
-  result[2] = ((double)m[1] * m[5] - (double)m[2] * m[4]) * d;
-  result[3] = e3 * d;
-  result[4] = ((double)m[0] * m[8] - (double)m[2] * m[6]) * d;
-  result[5] = ((double)m[3] * m[2] - (double)m[0] * m[5]) * d;
-  result[6] = e6 * d;
-  result[7] = ((double)m[6] * m[1] - (double)m[0] * m[7]) * d;
-  result[8] = ((double)m[0] * m[4] - (double)m[3] * m[1]) * d;
+  result[0] = (float)(e0 * d);
+  result[1] = (float)(((double)m[2] * m[7] - (double)m[1] * m[8]) * d);
+  result[2] = (float)(((double)m[1] * m[5] - (double)m[2] * m[4]) * d);
+  result[3] = (float)(e3 * d);
+  result[4] = (float)(((double)m[0] * m[8] - (double)m[2] * m[6]) * d);
+  result[5] = (float)(((double)m[3] * m[2] - (double)m[0] * m[5]) * d);
+  result[6] = (float)(e6 * d);
+  result[7] = (float)(((double)m[6] * m[1] - (double)m[0] * m[7]) * d);
+  result[8] = (float)(((double)m[0] * m[4] - (double)m[3] * m[1]) * d);
   for(i = 0; i < 9; i++) m[i] = result[i];
   return 0; /* ok */
 }
@@ -1560,9 +1560,9 @@ struct ExtractZlib { // Zlib decompression and information extraction
     size_t HLIT =  readBitsFromStream(bp, in, 5) + 257; //number of literal/length codes + 257
     size_t HDIST = readBitsFromStream(bp, in, 5) + 1; //number of dist codes + 1
     size_t HCLEN = readBitsFromStream(bp, in, 4) + 4; //number of code length codes + 4
-    zlibinfo->back().hlit = HLIT - 257;
-    zlibinfo->back().hdist = HDIST - 1;
-    zlibinfo->back().hclen = HCLEN - 4;
+    zlibinfo->back().hlit = (int)(HLIT - 257);
+    zlibinfo->back().hdist = (int)(HDIST - 1);
+    zlibinfo->back().hclen = (int)(HCLEN - 4);
     std::vector<unsigned long> codelengthcode(19); //lengths of tree to decode the lengths of the dynamic tree
     for(size_t i = 0; i < 19; i++) codelengthcode[CLCL[i]] = (i < HCLEN) ? readBitsFromStream(bp, in, 3) : 0;
     //code length code lengths
@@ -1586,7 +1586,7 @@ struct ExtractZlib { // Zlib decompression and information extraction
       } else if(code == 17) { //repeat "0" 3-10 times
         if(bp >> 3 >= inlength) { error = 50; return; } //error, bit pointer jumps past memory
         replength = 3 + readBitsFromStream(bp, in, 3);
-        zlibinfo->back().treecodes.push_back(replength); //tree symbol code repetitions
+        zlibinfo->back().treecodes.push_back((int)replength); //tree symbol code repetitions
         for(size_t n = 0; n < replength; n++) { //repeat this value in the next lengths
           if(i >= HLIT + HDIST) { error = 14; return; } //error: i is larger than the amount of codes
           if(i < HLIT) bitlen[i++] = 0; else bitlenD[i++ - HLIT] = 0;
@@ -1594,7 +1594,7 @@ struct ExtractZlib { // Zlib decompression and information extraction
       } else if(code == 18) { //repeat "0" 11-138 times
         if(bp >> 3 >= inlength) { error = 50; return; } //error, bit pointer jumps past memory
         replength = 11 + readBitsFromStream(bp, in, 7);
-        zlibinfo->back().treecodes.push_back(replength); //tree symbol code repetitions
+        zlibinfo->back().treecodes.push_back((int)replength); //tree symbol code repetitions
         for(size_t n = 0; n < replength; n++) { //repeat this value in the next lengths
           if(i >= HLIT + HDIST) { error = 15; return; } //error: i is larger than the amount of codes
           if(i < HLIT) bitlen[i++] = 0; else bitlenD[i++ - HLIT] = 0;
@@ -1652,9 +1652,9 @@ struct ExtractZlib { // Zlib decompression and information extraction
         }
         numlen++;
         zlibinfo->back().lz77_dcode.back() = codeD; //output distance code
-        zlibinfo->back().lz77_lbits.back() = numextrabits; //output length extra bits
+        zlibinfo->back().lz77_lbits.back() = (int)numextrabits; //output length extra bits
         zlibinfo->back().lz77_dbits.back() = numextrabitsD; //output dist extra bits
-        zlibinfo->back().lz77_lvalue.back() = length; //output length
+        zlibinfo->back().lz77_lvalue.back() = (int)length; //output length
         zlibinfo->back().lz77_dvalue.back() = dist; //output dist
       }
     }
